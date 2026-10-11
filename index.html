@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wingbeat Lab</title>
+<meta name="description" content="A field instrument that measures mosquito wingbeat frequency on a phone and records labelled audio for vector surveillance. Dr. Udayakumar Mani, SASTRA Deemed to be University.">
+<meta name="theme-color" content="#101a16">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+:root{--bg:#0d1512;--panel:#16211c;--line:#27352e;--ink:#e6efe9;--muted:#8ea89a;
+ --accent:#59d49a;--gold:#e0b64a;--bad:#e07a7a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);padding-bottom:40px;
+ font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:0 15px}
+header{padding:18px 0 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:1.2rem;font-weight:600;letter-spacing:-.01em}
+header p{color:var(--muted);font-size:.85rem;margin-top:3px}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;
+ padding:15px;margin-top:14px}
+.panel h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+ margin-bottom:11px;font-weight:700}
+
+/* live readout */
+.readout{text-align:center;padding:10px 0 4px}
+.hz{font:700 3.6rem/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#44504a;
+ transition:color .15s}
+.hz.on{color:var(--accent)}
+.hz small{font-size:1.1rem;font-weight:400;color:var(--muted);margin-left:5px}
+.sub{color:var(--muted);font-size:.84rem;margin-top:5px;min-height:20px}
+.band{color:var(--gold);font-size:.82rem;margin-top:2px;min-height:18px}
+.meter{height:6px;background:#1e2b25;border-radius:99px;overflow:hidden;margin-top:12px}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,#3c7a5e,var(--accent));width:0;transition:width .08s}
+
+/* buttons */
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+button,select,input,textarea{font:inherit;font-size:.93rem}
+button{background:var(--accent);color:#06130d;border:0;border-radius:9px;padding:12px 16px;
+ font-weight:700;cursor:pointer;flex:1;min-width:120px}
+button:hover:not(:disabled){filter:brightness(1.08)}
+button.sec{background:transparent;color:var(--accent);border:1px solid var(--line);font-weight:600}
+button:disabled{opacity:.35;cursor:not-allowed;filter:none}
+
+.say{margin-top:11px;font-size:.86rem;color:var(--muted);min-height:20px}
+.say.bad{color:var(--bad)}
+
+/* result */
+.big{text-align:center;padding:6px 0 12px}
+.big b{font:700 2.8rem/1 ui-monospace,Menlo,Consolas,monospace;color:var(--accent)}
+.big span{display:block;color:var(--muted);font-size:.84rem;margin-top:5px}
+table.st{width:100%;border-collapse:collapse;font-size:.88rem}
+table.st td{padding:7px 2px;border-bottom:1px solid var(--line);vertical-align:top}
+table.st td:first-child{color:var(--muted);width:56%}
+.note{color:var(--gold);font-size:.85rem;margin-top:11px;line-height:1.55}
+.caution{background:#1d1a10;border:1px solid #4a3f1c;border-radius:9px;padding:11px 13px;
+ color:#dcc98c;font-size:.84rem;margin-top:12px;line-height:1.55}
+.warn{color:var(--bad);font-size:.9rem}
+
+/* model verdict */
+.verdict{text-align:center;padding:4px 0 10px}
+.verdict b{font:700 2.1rem/1.15 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+ color:var(--accent);display:block}
+.verdict b.no{color:var(--muted)}
+.verdict span{display:block;color:var(--muted);font-size:.84rem;margin-top:6px}
+.pbar{height:7px;background:#1e2b25;border-radius:99px;overflow:hidden;margin:4px 0 2px}
+.pbar i{display:block;height:100%;background:var(--accent)}
+.pbar i.lo{background:#4a5a52}
+.strip{display:flex;gap:2px;height:46px;align-items:flex-end;margin-top:12px;
+ background:#111b16;border-radius:8px;padding:7px}
+.strip div{flex:1;background:#3c7a5e;border-radius:2px 2px 0 0;min-height:1px}
+.strip div.hit{background:var(--accent)}
+.sl{display:flex;justify-content:space-between;color:var(--muted);font-size:.72rem;margin-top:4px}
+
+/* histogram */
+.hwrap{display:flex;align-items:flex-end;gap:2px;height:120px;margin-top:14px;
+ background:#111b16;border-radius:8px;padding:8px}
+.hbar{flex:1;background:var(--accent);border-radius:2px 2px 0 0;min-height:1px;opacity:.85}
+.haxis{display:flex;justify-content:space-between;color:var(--muted);font-size:.72rem;margin-top:5px}
+
+/* form */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+@media(max-width:520px){.grid{grid-template-columns:1fr}}
+label{display:block;font-size:.76rem;color:var(--muted);margin-bottom:4px}
+input,select,textarea{width:100%;background:#111b16;border:1px solid var(--line);
+ border-radius:8px;padding:10px 11px;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:1px solid var(--accent)}
+textarea{resize:vertical;min-height:54px}
+.locrow{display:flex;gap:8px;align-items:flex-end}
+.locrow button{flex:0 0 auto;min-width:0;padding:10px 13px}
+#loc{color:var(--accent);font-size:.84rem;padding:10px 0}
+
+ul#list{list-style:none;margin-top:10px}
+ul#list li{padding:8px 0;border-bottom:1px solid var(--line);font-size:.89rem}
+ul#list li span{display:block;color:var(--muted);font-size:.78rem}
+.count{color:var(--muted);font-size:.82rem}
+
+details{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 15px}
+summary{cursor:pointer;font-weight:600;font-size:.93rem;color:var(--accent)}
+details p,details li{color:var(--muted);font-size:.87rem;margin-top:8px;line-height:1.6}
+details ul{margin-left:19px}
+details b{color:var(--ink)}
+footer{color:var(--muted);font-size:.8rem;text-align:center;margin-top:24px;padding:14px 15px;
+ border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Wingbeat Lab</h1>
+  <p>Measures mosquito wingbeat frequency and records labelled audio for surveillance</p>
+</header>
+
+<div class="panel">
+  <h2>Live</h2>
+  <div class="readout">
+    <div class="hz" id="liveHz">&mdash;<small>Hz</small></div>
+    <div class="sub" id="liveSnr">microphone off</div>
+    <div class="band" id="liveBand"></div>
+  </div>
+  <div class="meter"><i id="level"></i></div>
+  <div class="btns">
+    <button id="micBtn">Start microphone</button>
+    <button id="recBtn" disabled>Record 8 seconds</button>
+    <button class="sec" id="testBtn">Self test</button>
+  </div>
+  <p class="say" id="say">Press <b>Self test</b> first: it feeds a synthetic 450 Hz wingbeat through the same measurement chain, so you can confirm the instrument works before you trust it on an insect.</p>
+</div>
+
+<div class="panel" id="result" hidden>
+  <h2>Result</h2>
+  <div id="stats"></div>
+  <div id="hist"></div>
+  <div class="btns">
+    <button id="saveBtn" disabled>Save this recording</button>
+    <button class="sec" id="wavBtn">Download the audio</button>
+  </div>
+</div>
+
+<div class="panel" id="mlPanel" hidden>
+  <h2>Trained model</h2>
+  <div id="mlBody"></div>
+  <div class="btns">
+    <button class="sec" id="mlBtn">Run the model on this recording</button>
+  </div>
+  <p class="say" id="mlSay"></p>
+</div>
+
+<div class="panel">
+  <h2>Label this recording</h2>
+  <div class="grid">
+    <div>
+      <label for="species">Species, if confirmed under a microscope</label>
+      <input id="species" placeholder="Aedes aegypti" autocomplete="off">
+    </div>
+    <div>
+      <label for="sex">Sex</label>
+      <select id="sex">
+        <option value="unknown">unknown</option>
+        <option value="female">female</option>
+        <option value="male">male</option>
+      </select>
+    </div>
+    <div>
+      <label for="site">Site</label>
+      <input id="site" placeholder="Thanjavur, ward 12" autocomplete="off">
+    </div>
+    <div>
+      <label for="temp">Temperature &deg;C</label>
+      <input id="temp" placeholder="29" inputmode="decimal" autocomplete="off">
+    </div>
+    <div>
+      <label for="method">How was it recorded?</label>
+      <select id="method">
+        <option value="cup">in a cup, free flight</option>
+        <option value="trap">inside a trap</option>
+        <option value="tethered">tethered</option>
+        <option value="wild">wild, in the open</option>
+      </select>
+    </div>
+    <div>
+      <label>Location</label>
+      <div class="locrow">
+        <span id="loc">not recorded</span>
+        <button class="sec" id="locBtn">Get</button>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:9px">
+    <label for="notes">Notes</label>
+    <textarea id="notes" placeholder="Background noise, container, time since capture"></textarea>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Collected data <span class="count" id="count">none saved yet</span></h2>
+  <ul id="list"></ul>
+  <div class="btns">
+    <button class="sec" id="exportCsv" disabled>Export CSV</button>
+    <button class="sec" id="exportJson" disabled>Export JSON</button>
+    <button class="sec" id="clearBtn">Clear</button>
+  </div>
+</div>
+
+<details>
+  <summary>How to record so the measurement is worth keeping</summary>
+  <ul>
+    <li><b>Within 5 to 10 cm.</b> Published work found phones pick up a mosquito at 50 mm for a basic handset and 100 mm for a better one. Beyond that there is no signal to measure, however good the software is.</li>
+    <li><b>Quiet, below about 50 dB.</b> A fan, a road or a television will bury the tone.</li>
+    <li><b>Turn off noise suppression.</b> This app already asks the browser to disable echo cancellation, noise suppression and automatic gain, because all three are designed to remove exactly this kind of faint steady tone.</li>
+    <li><b>Record the true species.</b> A recording without a confirmed identification cannot train anything. Catch, record, then identify under a microscope, and type the species in before saving.</li>
+    <li><b>Note the temperature.</b> Wingbeat frequency changes with it, so a recording without a temperature is worth much less.</li>
+  </ul>
+</details>
+
+<details>
+  <summary>What this instrument can and cannot tell you</summary>
+  <p><b>It measures a frequency honestly.</b> The self test confirms it recovers a known tone to within about 1 Hz, including when the fundamental is quieter than its own harmonics.</p>
+  <p><b>It now also runs two trained neural networks</b>, described in the next section. One answers whether a mosquito is flying near the microphone. The other asks whether that mosquito is <i>Culex quinquefasciatus</i>. Neither was trained on a single Indian recording.</p>
+  <p><b>It does not identify species in general, and nothing on a phone reliably does yet.</b> In the published field trial, classification from phone audio reached roughly 35% accuracy without a location prior and about 65% with one. Some pairs are hopeless: <i>Aedes aegypti</i> was taken for <i>Anopheles gambiae</i> about 95% of the time. Others separate well, including <i>Ae. aegypti</i> from <i>Ae. albopictus</i>, and <i>Culex pipiens</i> from <i>Cx. quinquefasciatus</i>.</p>
+  <p><b>So the value is in counting, not naming.</b> Relative abundance in one band, at one site, tracked over weeks, is a usable surveillance signal even when any single recording is uncertain.</p>
+  <p><b>And the real output of this app is the dataset.</b> A model for Tamil Nadu vectors needs Tamil Nadu recordings, with confirmed species and temperature. That is what the export is for.</p>
+</details>
+
+<details>
+  <summary>What the two trained models are, and what they are not</summary>
+  <p><b>Where they come from.</b> Both were trained on HumBugDB, the largest public mosquito acoustic dataset: 9,295 files, 33.5 hours, recorded in Tanzania, Thailand, the United Kingdom, Kenya and the USA. There are <b>no Indian recordings in it at all</b>.</p>
+  <p><b>The detector</b> answers one question: is a mosquito flying near this microphone? That question has real data behind it, 18.3 hours of mosquito against 14.6 hours of background, and the answer is species independent, so it travels better than any species model would.</p>
+  <p><b>The <i>Culex quinquefasciatus</i> head</b> had 678 files and 124 minutes to learn from, which is the most any single species in the dataset offers. <i>Cx. quinquefasciatus</i> is a genuine Tamil Nadu vector, carrying lymphatic filariasis and Japanese encephalitis, so it is the right species to start with. But wingbeat frequency is set largely by body size, and body size differs between populations. Treat its answer as a hypothesis your own recordings will correct.</p>
+  <p><b>Why the other three vectors are missing.</b> The public data holds 22 minutes of <i>Aedes aegypti</i>, 72 seconds of <i>Anopheles stephensi</i> and 42 seconds of <i>Aedes albopictus</i>. Forty-two seconds cannot train anything. That gap is now measured rather than assumed, and it is the clearest argument there is for collecting Indian recordings, which is what the export button on this page is for.</p>
+  <p><b>What runs on the phone.</b> 23,553 parameters, 92 KB per model, in plain JavaScript with no machine-learning library. The JavaScript was checked against the original Python model and agrees to better than one part in ten million, and the audio features were checked against librosa to better than a thousandth of a decibel. Those checks matter more than they sound: a model fed slightly different numbers than it was trained on does not fail loudly, it returns confident nonsense.</p>
+</details>
+
+<footer>
+  Wingbeat Lab &middot; prototype<br>
+  Designed by Dr. Udayakumar Mani, SASTRA Deemed to be University
+</footer>
+
+</div>
+
+<script src="dsp.js"></script>
+<script src="features.js"></script>
+<script src="model.js"></script>
+<script src="classify.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

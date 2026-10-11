@@ -1,0 +1,22 @@
+{
+  "_README": "Held-out scores from the training run. The app reads this file and, if roc_auc is present, displays the figures next to every prediction. Leave the nulls as they are until you copy the real numbers out of the training output: the app then says the accuracy is not recorded, which is the truthful thing to show. Do not guess these values.",
+  "_where_to_find_them": "train_wingbeat.py prints 'ROC AUC', 'PR AUC', a confusion matrix and a classification report for each model, right after it finishes fitting.",
+  "trained_on": "HumBugDB (Zenodo 4904800). Tanzania, Thailand, UK, Kenya, USA. No Indian recordings.",
+  "split": "GroupShuffleSplit by recording id, 25% held out. Windows from one recording never appear in both halves.",
+  "detector": {
+    "question": "Is a mosquito flying near this microphone?",
+    "training_data": "18.3 h mosquito, 14.6 h background",
+    "roc_auc": null,
+    "pr_auc": null,
+    "confusion_matrix": null,
+    "test_recordings": null
+  },
+  "culex": {
+    "question": "Is this mosquito Culex quinquefasciatus?",
+    "training_data": "678 files, 124.6 minutes, none from India",
+    "roc_auc": null,
+    "pr_auc": null,
+    "confusion_matrix": null,
+    "test_recordings": null
+  }
+}

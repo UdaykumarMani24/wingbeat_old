@@ -1,0 +1,1 @@
+{"sr": 8000, "n_fft": 512, "hop": 128, "n_mels": 40, "fmin": 100, "fmax": 2000, "logmel_shape": [40, 63], "fb_shape": [40, 257], "signal_len": 8000}
